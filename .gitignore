@@ -1,0 +1,20 @@
+# Maven build output
+/target/
+
+# Node.js dependencies (frontend)
+/node_modules/
+
+# IDE/editor settings
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+
+# OS-specific files
+Thumbs.db
+.DS_Store
+
+# Environment variables
+.env

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Result — ExamPortal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: var(--gray-100); }
+    [data-theme="dark"] body { background: #0f172a; }
+    [data-theme="dark"] .review-item { background: #1a1a2e; border-color: #1e293b; }
+    [data-theme="dark"] .review-q { color: #e2e8f0; }
+    [data-theme="dark"] .review-answers { color: #94a3b8; }
+    [data-theme="dark"] .option.correct { background: #064e3b; border-color: #059669; }
+    [data-theme="dark"] .option.wrong   { background: #7f1d1d; border-color: #dc2626; }
+  </style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav style="position:sticky;top:0;background:white;border-bottom:1px solid #E5E7EB;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;z-index:10;">
+  <a href="index.html" style="font-family:var(--font-display);font-size:1.2rem;color:var(--purple-main);font-weight:700;text-decoration:none;">📝 ExamPortal</a>
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-outline" onclick="window.location.href='student.html'">Back to Dashboard</button>
+  </div>
+</nav>
+
+<!-- RESULT HERO -->
+<div class="result-hero" id="result-hero">
+  <div class="result-score-ring" id="score-ring">
+    <div class="result-pct" id="result-pct">0%</div>
+    <div class="result-pct-label">Score</div>
+  </div>
+  <div class="result-grade" id="result-grade">—</div>
+  <div class="result-sub" id="result-sub">Loading...</div>
+  <div class="result-stats">
+    <div class="result-stat">
+      <strong id="rs-correct">0</strong>
+      <span>Correct</span>
+    </div>
+    <div class="result-stat">
+      <strong id="rs-wrong">0</strong>
+      <span>Wrong</span>
+    </div>
+    <div class="result-stat">
+      <strong id="rs-skipped">0</strong>
+      <span>Skipped</span>
+    </div>
+    <div class="result-stat">
+      <strong id="rs-total">0</strong>
+      <span>Total</span>
+    </div>
+  </div>
+  <div style="margin-top:2rem;display:flex;gap:12px;justify-content:center;position:relative;">
+    <button class="btn btn-white" onclick="window.location.href='student.html'">Back to Dashboard</button>
+    <button class="btn btn-outline" style="border-color:rgba(255,255,255,0.4);color:white;" onclick="window.location.href='student.html?tab=exams'">Try Another Exam</button>
+  </div>
+</div>
+
+<!-- RESULT BODY -->
+<div class="result-body">
+
+  <!-- SCORE BREAKDOWN -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+      <span class="card-title">Score Breakdown</span>
+      <span id="auto-submit-badge"></span>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;text-align:center;">
+        <div style="padding:1rem;background:var(--gray-100);border-radius:var(--radius-sm);">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--success);" id="sb-correct">0</div>
+          <div style="font-size:0.8rem;color:var(--gray-400);">Correct Answers</div>
+        </div>
+        <div style="padding:1rem;background:var(--gray-100);border-radius:var(--radius-sm);">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--danger);" id="sb-wrong">0</div>
+          <div style="font-size:0.8rem;color:var(--gray-400);">Wrong Answers</div>
+        </div>
+        <div style="padding:1rem;background:var(--gray-100);border-radius:var(--radius-sm);">
+          <div style="font-size:1.5rem;font-weight:700;color:var(--accent);" id="sb-skipped">0</div>
+          <div style="font-size:0.8rem;color:var(--gray-400);">Skipped</div>
+        </div>
+      </div>
+      <div style="margin-top:1.2rem;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--gray-600);margin-bottom:6px;">
+          <span>Performance</span>
+          <span id="sb-pct">0%</span>
+        </div>
+        <div style="height:10px;background:#E5E7EB;border-radius:5px;overflow:hidden;">
+          <div id="sb-bar" style="height:100%;border-radius:5px;transition:width 1s ease;width:0%;background:linear-gradient(90deg,var(--purple-mid),var(--purple-light));"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANSWER REVIEW -->
+  <div style="font-size:1rem;font-weight:600;color:var(--gray-800);margin-bottom:1rem;">Answer Review</div>
+  <div id="review-list"></div>
+</div>
+
+<script>
+  // Apply theme
+  if (localStorage.getItem('ep_theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+
+  // API function to fetch result
+  async function fetchResult(resultId) {
+    try {
+      const session = JSON.parse(localStorage.getItem('ep_session') || 'null');
+      if (!session) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      
+      const response = await fetch(`/api/results/${session.id}/${resultId}`);
+      if (response.ok) {
+        return await response.json();
+      } else {
+        // If specific result not found, try to get latest result
+        const allResultsResponse = await fetch(`/api/results/${session.id}`);
+        const allResults = await allResultsResponse.json();
+        return allResults[allResults.length - 1] || null;
+      }
+    } catch (error) {
+      console.error('Error fetching result:', error);
+      return null;
+    }
+  }
+
+  // Load result
+  async function loadResult() {
+    const resultId = localStorage.getItem('ep_last_result') || localStorage.getItem('ep_view_result');
+    const result = await fetchResult(resultId);
+
+    if (!result) { 
+      window.location.href = 'student.html'; 
+      return;
+    }
+
+    // Process and display result
+    displayResult(result);
+  }
+
+  async function displayResult(result) {
+    const pct     = Math.round(result.percentage);
+    const skipped = result.answers ? result.answers.filter(a => a === null).length : 0;
+    const wrong   = result.total - result.score - skipped;
+
+    // Hero
+    document.getElementById('result-pct').textContent   = pct + '%';
+    document.getElementById('result-grade').textContent  = result.grade;
+    document.getElementById('result-sub').textContent    = result.studentName + ' — ' + result.examTitle + ' — ' + new Date(result.date).toLocaleString();
+
+    document.getElementById('rs-correct').textContent  = result.score;
+    document.getElementById('rs-wrong').textContent    = wrong;
+    document.getElementById('rs-skipped').textContent  = skipped;
+    document.getElementById('rs-total').textContent    = result.total;
+
+    // Color ring based on score
+    const ring = document.getElementById('score-ring');
+    if (pct >= 80) ring.style.borderColor = '#10B981';
+    else if (pct >= 60) ring.style.borderColor = '#A78BFA';
+    else if (pct >= 40) ring.style.borderColor = '#F59E0B';
+    else ring.style.borderColor = '#EF4444';
+    document.getElementById('result-pct').style.color = ring.style.borderColor;
+
+    // Breakdown
+    document.getElementById('sb-correct').textContent = result.score;
+    document.getElementById('sb-wrong').textContent   = wrong;
+    document.getElementById('sb-skipped').textContent = skipped;
+    document.getElementById('sb-pct').textContent     = pct + '%';
+
+    if (result.autoSubmit) {
+      document.getElementById('auto-submit-badge').innerHTML =
+        '<span class="badge badge-amber">⏰ Auto-submitted</span>';
+    }
+
+    // Animate bar
+    setTimeout(() => {
+      document.getElementById('sb-bar').style.width = pct + '%';
+    }, 300);
+
+    // Review list - only if questions data is available
+    if (result.questions && result.answers) {
+      const reviewEl = document.getElementById('review-list');
+      reviewEl.innerHTML = result.questions.map((q, i) => {
+        const ua      = result.answers[i];
+        const isRight = ua === ['A', 'B', 'C', 'D'].indexOf(q.correctOption);
+        const isSkip  = ua === null || ua === undefined;
+        const status  = isRight ? 'ok' : isSkip ? 'skip' : 'bad';
+        const icon    = isRight ? '✓' : isSkip ? '—' : '✗';
+
+        const options = [q.optionA, q.optionB, q.optionC, q.optionD];
+        const opts = options.map((o, oi) => {
+          let cls = '';
+          if (oi === ['A', 'B', 'C', 'D'].indexOf(q.correctOption)) cls = 'correct';
+          else if (oi === ua && !isRight) cls = 'wrong';
+          return `<div class="option ${cls}" style="pointer-events:none;margin-bottom:8px;">
+            <div class="option-letter" style="flex-shrink:0;">${String.fromCharCode(65+oi)}</div>
+            ${o}
+            ${oi === ['A', 'B', 'C', 'D'].indexOf(q.correctOption) ? '<span style="margin-left:auto;font-size:0.8rem;color:var(--success);font-weight:600;">✓ Correct</span>' : ''}
+            ${oi === ua && !isRight ? '<span style="margin-left:auto;font-size:0.8rem;color:var(--danger);font-weight:600;">Your answer</span>' : ''}
+          </div>`;
+        }).join('');
+
+        return `<div class="review-item">
+          <div class="review-item-top">
+            <div class="review-status-icon ${status}">${icon}</div>
+            <div class="review-q"><strong>Q${i+1}.</strong> ${q.questionText}</div>
+          </div>
+          <div style="margin-left:40px;">${opts}</div>
+          ${isSkip ? '<div style="margin-left:40px;font-size:0.85rem;color:var(--accent);margin-top:8px;">⚠️ This question was skipped</div>' : ''}
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Initialize the page
+  loadResult();
+</script>
+</body>
+</html>

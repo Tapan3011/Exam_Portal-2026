@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — ExamPortal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    [data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+    [data-theme="dark"] .sidebar { background: linear-gradient(180deg,#0f0a2e 0%,#1e1b4b 100%); }
+    [data-theme="dark"] .main-content { background: #0f172a; }
+    [data-theme="dark"] .topbar { background: #1a1a2e; border-color: #1e293b; }
+    [data-theme="dark"] .stat-card,
+    [data-theme="dark"] .card { background: #1a1a2e; border-color: #1e293b; }
+    [data-theme="dark"] .table th { background: #0f172a; color: #64748b; }
+    [data-theme="dark"] .table td { border-color: #1e293b; color: #e2e8f0; }
+    [data-theme="dark"] .table tr:hover td { background: #1e293b; }
+    [data-theme="dark"] .form-input,
+    [data-theme="dark"] .form-select { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+    [data-theme="dark"] .topbar-title { color: #e2e8f0; }
+    [data-theme="dark"] .stat-value { color: #e2e8f0; }
+    [data-theme="dark"] .card-title { color: #e2e8f0; }
+    [data-theme="dark"] .q-row-text { color: #e2e8f0; }
+    [data-theme="dark"] .modal { background: #1a1a2e; }
+    [data-theme="dark"] .modal-title { color: #e2e8f0; }
+
+    .theme-toggle {
+      width: 42px; height: 24px; border-radius: 12px;
+      background: rgba(255,255,255,0.2); border: none; cursor: pointer;
+      position: relative; transition: background 0.3s;
+    }
+    .theme-toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: white; transition: transform 0.3s;
+    }
+    [data-theme="dark"] .theme-toggle { background: var(--purple-light); }
+    [data-theme="dark"] .theme-toggle::after { transform: translateX(18px); }
+
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn 0.3s ease; }
+
+    .q-bank-item {
+      background: var(--gray-100); border-radius: var(--radius-sm);
+      padding: 1rem; margin-bottom: 10px;
+    }
+    [data-theme="dark"] .q-bank-item { background: #0f172a; }
+    .q-bank-item-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; }
+    .q-row-text { font-size:0.9rem; font-weight:500; color:var(--gray-800); margin-bottom:8px; }
+    .q-opts-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .q-opt-tag { font-size:0.78rem; padding:3px 10px; border-radius:var(--radius-full); border:1px solid #E5E7EB; color:var(--gray-600); }
+    .q-opt-tag.correct { background:#D1FAE5; color:#065F46; border-color:#A7F3D0; font-weight:600; }
+
+    .create-exam-form { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .create-exam-form .full { grid-column: 1 / -1; }
+
+    .activity-item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F3F4F6; }
+    [data-theme="dark"] .activity-item { border-color:#1e293b; }
+    .activity-item:last-child { border-bottom:none; }
+    .activity-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .activity-dot.green { background:var(--success); }
+    .activity-dot.purple { background:var(--purple-mid); }
+    .activity-dot.amber { background:var(--accent); }
+
+    .tab-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--gray-600);
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .tab-btn:hover {
+      background: var(--gray-100);
+      color: var(--gray-800);
+    }
+    
+    .tab-btn.active {
+      background: var(--purple-main);
+      color: white;
+    }
+    
+    .tab-content {
+      display: block;
+    }
+    
+    .tab-content.hidden {
+      display: none;
+    }
+    
+    [data-theme="dark"] .tab-btn {
+      color: var(--gray-400);
+    }
+    
+    [data-theme="dark"] .tab-btn:hover {
+      background: var(--gray-800);
+      color: var(--gray-200);
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">📝</div>
+      ExamPortal
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Admin Panel</div>
+      <button class="sidebar-item active" onclick="showView('overview',this)">
+        <span class="icon">📊</span> Overview
+      </button>
+      <button class="sidebar-item" onclick="showView('exams',this)">
+        <span class="icon">📋</span> Manage Exams
+      </button>
+      <button class="sidebar-item" onclick="showView('create',this)">
+        <span class="icon">➕</span> Create Exam
+      </button>
+      <button class="sidebar-item" onclick="showView('questions',this)">
+        <span class="icon">❓</span> Question Bank
+      </button>
+      <button class="sidebar-item" onclick="showView('results',this)">
+        <span class="icon">🏆</span> All Results
+      </button>
+      <button class="sidebar-item" onclick="showView('students',this)">
+        <span class="icon">👥</span> Students
+      </button>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:8px;">
+        <span style="color:rgba(255,255,255,0.6);font-size:0.85rem;">Dark Mode</span>
+        <button class="theme-toggle" onclick="toggleTheme()"></button>
+      </div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">AD</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebar-name">Admin</div>
+          <div class="sidebar-user-role">Administrator</div>
+        </div>
+      </div>
+      <button class="sidebar-item" onclick="logout()" style="margin-top:8px;">
+        <span class="icon">🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Overview</div>
+        <div class="topbar-sub">Admin Control Panel</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:0.85rem;color:var(--gray-400);" id="topbar-date"></span>
+        <a href="index.html" class="btn btn-outline" style="padding:6px 16px;font-size:0.85rem;">Home</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-overview">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+          <div class="stat-card purple">
+            <div class="stat-icon purple">📋</div>
+            <div class="stat-value" id="stat-exams">0</div>
+            <div class="stat-label">Total Exams</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon green">👥</div>
+            <div class="stat-value" id="stat-students">0</div>
+            <div class="stat-label">Students</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon amber">✅</div>
+            <div class="stat-value" id="stat-attempts">0</div>
+            <div class="stat-label">Exam Attempts</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon red">❓</div>
+            <div class="stat-value" id="stat-qs">24</div>
+            <div class="stat-label">Questions</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Recent Exam Attempts</span></div>
+            <div class="card-body" id="recent-attempts">
+              <div style="text-align:center;padding:2rem;color:var(--gray-400);font-size:0.9rem;">No attempts yet.</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Quick Actions</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-primary btn-full" onclick="showView('create',null)">➕ Create New Exam</button>
+              <button class="btn btn-outline btn-full" onclick="showView('questions',null)">❓ View Question Bank</button>
+              <button class="btn btn-outline btn-full" onclick="showView('results',null)">🏆 View All Results</button>
+              <button class="btn btn-outline btn-full" onclick="showView('students',null)">👥 Manage Students</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAGE EXAMS -->
+      <div class="view" id="view-exams">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">All Exams</span>
+            <button class="btn btn-primary" style="padding:6px 16px;font-size:0.85rem;" onclick="showView('create',null)">+ Create Exam</button>
+          </div>
+          <div class="card-body" style="padding:0;">
+            <table class="table" id="exams-table">
+              <thead><tr>
+                <th>Title</th><th>Subject</th><th>Duration</th><th>Questions</th><th>Action</th>
+              </tr></thead>
+              <tbody id="exams-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CREATE EXAM -->
+      <div class="view" id="view-create">
+        <div class="card" style="max-width:600px;">
+          <div class="card-header"><span class="card-title">Create New Exam</span></div>
+          <div class="card-body">
+            <div id="create-success" class="alert alert-success hidden">Exam created successfully!</div>
+            <div id="create-error" class="alert alert-error hidden"></div>
+            <div class="create-exam-form">
+              <div class="form-group full">
+                <label class="form-label">Exam Title</label>
+                <input type="text" id="new-title" class="form-input" placeholder="e.g. Final Science Test">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Subject</label>
+                <select id="new-subject" class="form-select">
+                  <option value="Mixed">Mixed (All Subjects)</option>
+                  <option value="Science">Science</option>
+                  <option value="Math">Math</option>
+                  <option value="History">History</option>
+                  <option value="Geography">Geography</option>
+                  <option value="English">English</option>
+                  <option value="Computer">Computer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Duration (minutes)</label>
+                <input type="number" id="new-duration" class="form-input" value="10" min="1" max="120">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Number of Questions</label>
+                <input type="number" id="new-qcount" class="form-input" value="5" min="1" max="20">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Exam Icon</label>
+                <select id="new-icon" class="form-select">
+                  <option value="📋">📋 Default</option>
+                  <option value="🔬">🔬 Science</option>
+                  <option value="📐">📐 Math</option>
+                  <option value="📜">📜 History</option>
+                  <option value="🌍">🌍 Geography</option>
+                  <option value="📖">📖 English</option>
+                  <option value="💻">💻 Computer</option>
+                  <option value="⭐">⭐ Special</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <button class="btn btn-primary btn-full btn-lg" onclick="createExam()">Create Exam</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION BANK -->
+      <div class="view" id="view-questions">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <span style="font-weight:600;color:var(--gray-800);">Question Bank Management</span>
+          <div style="display:flex;gap:10px;">
+            <select id="filter-subject" class="form-select" style="width:180px;" onchange="renderQuestions()">
+              <option value="">All Subjects</option>
+              <option>Science</option><option>Math</option><option>History</option>
+              <option>Geography</option><option>English</option><option>Computer</option>
+            </select>
+            <button class="btn btn-primary" style="padding:6px 16px;font-size:0.85rem;" onclick="showAddQuestionForm()">+ Add Question</button>
+          </div>
+        </div>
+
+        <!-- Question Management Tabs -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header" style="border-bottom:2px solid var(--purple-main);">
+            <div style="display:flex;gap:1rem;">
+              <button class="tab-btn active" onclick="switchQuestionTab('questions')">Questions</button>
+              <button class="tab-btn" onclick="switchQuestionTab('materials')">Study Materials</button>
+              <button class="tab-btn" onclick="switchQuestionTab('import')">Bulk Import</button>
+            </div>
+          </div>
+
+          <!-- Questions Tab -->
+          <div class="tab-content" id="tab-questions">
+            <div id="questions-list"></div>
+          </div>
+
+          <!-- Study Materials Tab -->
+          <div class="tab-content hidden" id="tab-materials">
+            <div style="padding:1.5rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <span style="font-weight:500;color:var(--gray-700);">Upload Study Materials</span>
+                <button class="btn btn-primary" style="padding:6px 16px;font-size:0.85rem;" onclick="document.getElementById('material-upload').click()">📁 Upload File</button>
+              </div>
+              <input type="file" id="material-upload" style="display:none;" accept=".pdf,.doc,.docx,.txt,.ppt,.pptx" multiple onchange="handleMaterialUpload(event)">
+              <div id="materials-list" style="margin-top:1rem;"></div>
+            </div>
+          </div>
+
+          <!-- Bulk Import Tab -->
+          <div class="tab-content hidden" id="tab-import">
+            <div style="padding:1.5rem;">
+              <div style="margin-bottom:1rem;">
+                <h3 style="margin-bottom:0.5rem;">Bulk Import Questions</h3>
+                <p style="color:var(--gray-600);font-size:0.9rem;">Upload a CSV or Excel file with questions in the specified format.</p>
+              </div>
+              <div style="border:2px dashed var(--purple-mid);border-radius:8px;padding:2rem;text-align:center;background:var(--purple-pale);">
+                <div style="font-size:2rem;margin-bottom:1rem;">📤</div>
+                <div style="margin-bottom:1rem;">
+                  <button class="btn btn-primary" onclick="document.getElementById('bulk-import').click()">Choose File</button>
+                  <input type="file" id="bulk-import" style="display:none;" accept=".csv,.xlsx,.xls" onchange="handleBulkImport(event)">
+                </div>
+                <div style="font-size:0.85rem;color:var(--gray-600);">
+                  Supported formats: CSV, Excel (.xlsx, .xls)<br>
+                  <a href="#" style="color:var(--purple-main);text-decoration:none;">Download template</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Question Form (Hidden by default) -->
+        <div class="card hidden" id="add-question-form">
+          <div class="card-header">
+            <span class="card-title">Add New Question</span>
+            <button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="hideAddQuestionForm()">Cancel</button>
+          </div>
+          <div class="card-body">
+            <div id="add-question-error" class="alert alert-error hidden"></div>
+            <div class="create-exam-form">
+              <div class="form-group full">
+                <label class="form-label">Subject</label>
+                <select id="new-question-subject" class="form-select">
+                  <option value="Science">Science</option>
+                  <option value="Math">Math</option>
+                  <option value="History">History</option>
+                  <option value="Geography">Geography</option>
+                  <option value="English">English</option>
+                  <option value="Computer">Computer</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Question Text</label>
+                <textarea id="new-question-text" class="form-input" rows="3" placeholder="Enter the question..."></textarea>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Option A</label>
+                <input type="text" id="new-question-a" class="form-input" placeholder="Enter option A...">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Option B</label>
+                <input type="text" id="new-question-b" class="form-input" placeholder="Enter option B...">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Option C</label>
+                <input type="text" id="new-question-c" class="form-input" placeholder="Enter option C...">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Option D</label>
+                <input type="text" id="new-question-d" class="form-input" placeholder="Enter option D...">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Correct Answer</label>
+                <select id="new-question-correct" class="form-select">
+                  <option value="A">Option A</option>
+                  <option value="B">Option B</option>
+                  <option value="C">Option C</option>
+                  <option value="D">Option D</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <button class="btn btn-primary btn-full" onclick="addNewQuestion()">Add Question</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALL RESULTS -->
+      <div class="view" id="view-results">
+        <div class="card">
+          <div class="card-header"><span class="card-title">All Student Results</span></div>
+          <div class="card-body" style="padding:0;">
+            <table class="table">
+              <thead><tr>
+                <th>Student</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Grade</th><th>Date</th>
+              </tr></thead>
+              <tbody id="all-results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- STUDENTS -->
+      <div class="view" id="view-students">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Registered Students</span></div>
+          <div class="card-body" style="padding:0;">
+            <table class="table">
+              <thead><tr>
+                <th>Name</th><th>Email</th><th>Exams Attempted</th><th>Best Score</th>
+              </tr></thead>
+              <tbody id="students-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title">Delete Exam?</div>
+    <div class="modal-text">This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-full" onclick="document.getElementById('delete-modal').classList.remove('active')">Cancel</button>
+      <button class="btn btn-danger-outline btn-full" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // API functions to fetch real data
+  async function fetchExams() {
+    try {
+      const response = await fetch('/api/exams');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      return [];
+    }
+  }
+
+  async function fetchQuestions() {
+    try {
+      const response = await fetch('/api/questions');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      return [];
+    }
+  }
+
+  async function fetchResults() {
+    try {
+      const response = await fetch('/api/results');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching results:', error);
+      return [];
+    }
+  }
+
+  async function fetchStudents() {
+    try {
+      const response = await fetch('/api/students');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      return [];
+    }
+  }
+
+  const session = JSON.parse(localStorage.getItem('ep_session') || 'null');
+  if (!session || session.role !== 'ADMIN') window.location.href = 'login.html';
+
+  document.getElementById('sidebar-name').textContent = session.name || 'Admin';
+  document.getElementById('topbar-date').textContent  = new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+
+  if (localStorage.getItem('ep_theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+
+  // INIT
+  loadOverview();
+  loadExamsTable();
+  renderQuestions();
+  loadResults();
+  loadStudents();
+
+  async function loadOverview() {
+    try {
+      const [exams, results, students] = await Promise.all([
+        fetchExams(),
+        fetchResults(), 
+        fetchStudents()
+      ]);
+      
+      document.getElementById('stat-exams').textContent = exams.length;
+      document.getElementById('stat-students').textContent = students.length;
+      document.getElementById('stat-attempts').textContent = results.length;
+
+      const recentEl = document.getElementById('recent-attempts');
+      if (results.length) {
+        recentEl.innerHTML = results.slice(-5).reverse().map(r => `
+          <div class="activity-item">
+            <div class="activity-dot ${r.percentage>=80?'green':r.percentage>=60?'purple':'amber'}"></div>
+            <div style="flex:1;">
+              <div style="font-size:0.9rem;font-weight:500;">${r.studentName}</div>
+              <div style="font-size:0.78rem;color:var(--gray-400);">${r.examTitle}</div>
+            </div>
+            <span class="badge ${r.percentage>=80?'badge-green':r.percentage>=60?'badge-purple':'badge-amber'}">${Math.round(r.percentage)}%</span>
+          </div>`).join('');
+      }
+    } catch (error) {
+      console.error('Error loading overview:', error);
+    }
+  }
+
+  async function loadExamsTable() {
+    try {
+      const exams = await fetchExams();
+      document.getElementById('exams-tbody').innerHTML = exams.map(e => `
+        <tr>
+          <td><span style="font-size:1rem;">📋</span> <span style="font-weight:500;">${e.title}</span></td>
+          <td><span class="badge badge-purple">${e.subject || 'Mixed'}</span></td>
+          <td>${e.duration} min</td>
+          <td>${e.questionCount || 0}</td>
+          <td><button class="btn btn-danger-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="deleteExam(${e.id})">Delete</button></td>
+        </tr>`).join('');
+    } catch (error) {
+      console.error('Error loading exams table:', error);
+    }
+  }
+
+  async function renderQuestions() {
+    try {
+      const questions = await fetchQuestions();
+      const filter = document.getElementById('filter-subject').value;
+      const list = filter ? questions.filter(q => q.subject === filter) : questions;
+      
+      const questionsList = document.getElementById('questions-list');
+      if (questionsList) {
+        questionsList.innerHTML = list.map(q => `
+          <div class="q-bank-item">
+            <div class="q-bank-item-top">
+              <span class="badge badge-purple">${q.subject}</span>
+              <span style="font-size:0.78rem;color:var(--gray-400);">ID: ${q.id}</span>
+            </div>
+            <div class="q-row-text">${q.questionText}</div>
+            <div class="q-opts-row">
+              <span class="q-opt-tag ${q.correctOption === 'A' ? 'correct' : ''}">A. ${q.optionA}</span>
+              <span class="q-opt-tag ${q.correctOption === 'B' ? 'correct' : ''}">B. ${q.optionB}</span>
+              <span class="q-opt-tag ${q.correctOption === 'C' ? 'correct' : ''}">C. ${q.optionC}</span>
+              <span class="q-opt-tag ${q.correctOption === 'D' ? 'correct' : ''}">D. ${q.optionD}</span>
+            </div>
+          </div>`).join('');
+      }
+      
+      // Update question count more safely
+      const questionBankTitle = document.querySelector('span[style*="Question Bank"]');
+      if (questionBankTitle) {
+        questionBankTitle.textContent = `Question Bank (${questions.length} questions)`;
+      }
+    } catch (error) {
+      console.error('Error rendering questions:', error);
+    }
+  }
+
+  async function loadResults() {
+    try {
+      const results = await fetchResults();
+      document.getElementById('all-results-tbody').innerHTML = results.length
+        ? results.map(r => `
+            <tr>
+              <td style="font-weight:500;">${r.studentName}</td>
+              <td>${r.examTitle}</td>
+              <td>${r.score}/${r.total}</td>
+              <td><span class="badge ${r.percentage>=80?'badge-green':r.percentage>=60?'badge-purple':r.percentage>=40?'badge-amber':'badge-red'}">${Math.round(r.percentage)}%</span></td>
+              <td>${r.grade || 'N/A'}</td>
+              <td style="color:var(--gray-400);font-size:0.82rem;">${r.date ? new Date(r.date).toLocaleDateString() : 'N/A'}</td>
+            </tr>`).join('')
+        : `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400);">No results yet.</td></tr>`;
+    } catch (error) {
+      console.error('Error loading results:', error);
+    }
+  }
+
+  async function loadStudents() {
+    try {
+      const [students, results] = await Promise.all([
+        fetchStudents(),
+        fetchResults()
+      ]);
+      
+      document.getElementById('students-tbody').innerHTML = students.map(s => {
+        const sResults = results.filter(r => r.studentId === s.id);
+        const best = sResults.length ? Math.round(Math.max(...sResults.map(r => r.percentage))) + '%' : '—';
+        return `<tr>
+          <td style="font-weight:500;">${s.name}</td>
+          <td style="color:var(--gray-400);">${s.email}</td>
+          <td>${sResults.length}</td>
+          <td style="color:var(--purple-main);font-weight:600;">${best}</td>
+        </tr>`;
+      }).join('');
+    } catch (error) {
+      console.error('Error loading students:', error);
+    }
+  }
+
+  // CREATE EXAM
+  async function createExam() {
+    const title    = document.getElementById('new-title').value.trim();
+    const subject  = document.getElementById('new-subject').value;
+    const duration = parseInt(document.getElementById('new-duration').value);
+    const qcount   = parseInt(document.getElementById('new-qcount').value);
+    const icon     = document.getElementById('new-icon').value;
+
+    if (!title) { 
+      document.getElementById('create-error').textContent = 'Please enter a title.'; 
+      document.getElementById('create-error').classList.remove('hidden'); 
+      return; 
+    }
+
+    try {
+      const response = await fetch('/api/exams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          title, 
+          subject, 
+          duration, 
+          questionCount: qcount, 
+          createdBy: session.id 
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        document.getElementById('create-error').classList.add('hidden');
+        document.getElementById('create-success').classList.remove('hidden');
+        document.getElementById('new-title').value = '';
+        setTimeout(() => document.getElementById('create-success').classList.add('hidden'), 2500);
+        await loadOverview(); 
+        await loadExamsTable();
+      } else {
+        document.getElementById('create-error').textContent = data.message || 'Failed to create exam.';
+        document.getElementById('create-error').classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Error creating exam:', error);
+      document.getElementById('create-error').textContent = 'Network error. Please try again.';
+      document.getElementById('create-error').classList.remove('hidden');
+    }
+  }
+
+  // DELETE EXAM
+  let deleteId = null;
+  function deleteExam(id) { deleteId = id; document.getElementById('delete-modal').classList.add('active'); }
+  async function confirmDelete() {
+    try {
+      const response = await fetch(`/api/exams/${deleteId}`, {
+        method: 'DELETE'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        document.getElementById('delete-modal').classList.remove('active');
+        await loadExamsTable(); 
+        await loadOverview();
+      } else {
+        alert('Failed to delete exam: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+      alert('Network error. Please try again.');
+    }
+  }
+
+  function showView(name, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    const titles = { overview:'Overview', exams:'Manage Exams', create:'Create Exam', questions:'Question Bank', results:'All Results', students:'Students' };
+    document.getElementById('topbar-title').textContent = titles[name] || name;
+    if (name === 'results')  loadResults();
+    if (name === 'students') loadStudents();
+  }
+
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('ep_theme', isDark ? 'light' : 'dark');
+  }
+
+  function logout() {
+    localStorage.removeItem('ep_session');
+    window.location.href = 'login.html';
+  }
+
+  // Question Bank Management Functions
+  function switchQuestionTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Show selected tab
+    document.getElementById('tab-' + tabName).classList.remove('hidden');
+    // Add active class to clicked button
+    event.target.classList.add('active');
+  }
+
+  function showAddQuestionForm() {
+    document.getElementById('add-question-form').classList.remove('hidden');
+  }
+
+  function hideAddQuestionForm() {
+    document.getElementById('add-question-form').classList.add('hidden');
+    // Clear form
+    document.getElementById('new-question-text').value = '';
+    document.getElementById('new-question-a').value = '';
+    document.getElementById('new-question-b').value = '';
+    document.getElementById('new-question-c').value = '';
+    document.getElementById('new-question-d').value = '';
+    document.getElementById('add-question-error').classList.add('hidden');
+  }
+
+  async function addNewQuestion() {
+    try {
+      const questionData = {
+        subject: document.getElementById('new-question-subject').value,
+        questionText: document.getElementById('new-question-text').value,
+        optionA: document.getElementById('new-question-a').value,
+        optionB: document.getElementById('new-question-b').value,
+        optionC: document.getElementById('new-question-c').value,
+        optionD: document.getElementById('new-question-d').value,
+        correctOption: document.getElementById('new-question-correct').value
+      };
+
+      // Validate inputs
+      if (!questionData.questionText || !questionData.optionA || !questionData.optionB || 
+          !questionData.optionC || !questionData.optionD) {
+        document.getElementById('add-question-error').textContent = 'Please fill in all fields.';
+        document.getElementById('add-question-error').classList.remove('hidden');
+        return;
+      }
+
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(questionData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        hideAddQuestionForm();
+        await renderQuestions();
+        await loadOverview();
+        alert('Question added successfully!');
+      } else {
+        document.getElementById('add-question-error').textContent = data.message || 'Failed to add question.';
+        document.getElementById('add-question-error').classList.remove('hidden');
+      }
+    } catch (error) {
+      console.error('Error adding question:', error);
+      document.getElementById('add-question-error').textContent = 'Network error. Please try again.';
+      document.getElementById('add-question-error').classList.remove('hidden');
+    }
+  }
+
+  async function handleMaterialUpload(event) {
+    const files = event.target.files;
+    const materialsList = document.getElementById('materials-list');
+    
+    if (files.length === 0) return;
+    
+    // Show loading state
+    materialsList.innerHTML = '<div style="text-align:center;padding:2rem;"><div class="loading-spinner"></div><div style="margin-top:0.5rem;">Uploading files...</div></div>';
+    
+    try {
+      const formData = new FormData();
+      for (let file of files) {
+        formData.append('files', file);
+      }
+      
+      const response = await fetch('/api/materials/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Display uploaded files
+        let html = '<div style="margin-top:1rem;"><h4 style="margin-bottom:0.5rem;">Uploaded Materials:</h4>';
+        for (let file of files) {
+          const fileIcon = getFileIcon(file.name);
+          html += `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem;background:var(--gray-100);border-radius:6px;margin-bottom:0.5rem;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.2rem;">${fileIcon}</span>
+                <div>
+                  <div style="font-weight:500;">${file.name}</div>
+                  <div style="font-size:0.78rem;color:var(--gray-400);">${(file.size / 1024).toFixed(1)} KB</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary" style="padding:4px 12px;font-size:0.8rem;" onclick="downloadMaterial('${file.name}')">Download</button>
+                <button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="this.parentElement.parentElement.remove()">Remove</button>
+              </div>
+            </div>
+          `;
+        }
+        html += '</div>';
+        materialsList.innerHTML = html;
+        
+        // Show success message
+        showSuccessMessage('Study materials uploaded successfully!');
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading materials:', error);
+      materialsList.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--danger);">❌ Upload failed. Please try again.</div>';
+      showErrorMessage('Failed to upload materials: ' + error.message);
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  }
+
+  function getFileIcon(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    const icons = {
+      'pdf': '📄',
+      'doc': '📝',
+      'docx': '📝',
+      'txt': '📃',
+      'ppt': '📊',
+      'pptx': '📊',
+      'xls': '📈',
+      'xlsx': '📈',
+      'jpg': '🖼️',
+      'jpeg': '🖼️',
+      'png': '🖼️',
+      'gif': '🖼️'
+    };
+    return icons[ext] || '📎';
+  }
+
+  function downloadMaterial(filename) {
+    window.open(`/api/materials/download/${filename}`, '_blank');
+  }
+
+  function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success';
+    alertDiv.textContent = message;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 3000);
+  }
+
+  function showErrorMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-error';
+    alertDiv.textContent = message;
+    alertDiv.style.position = 'fixed';
+    alertDiv.style.top = '20px';
+    alertDiv.style.right = '20px';
+    alertDiv.style.zIndex = '9999';
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
+
+  async function handleBulkImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const importDiv = document.getElementById('tab-import');
+    const originalContent = importDiv.innerHTML;
+    
+    // Show loading state
+    importDiv.innerHTML = `
+      <div style="padding:1.5rem;text-align:center;">
+        <div class="loading-spinner"></div>
+        <div style="margin-top:0.5rem;">Processing ${file.name}...</div>
+        <div style="font-size:0.78rem;color:var(--gray-400);margin-top:0.25rem;">Please wait while we import your questions</div>
+      </div>
+    `;
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/questions/bulk-import', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        importDiv.innerHTML = `
+          <div style="padding:1.5rem;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:1rem;">✅</div>
+            <div style="font-size:1.2rem;font-weight:600;color:var(--success);margin-bottom:0.5rem;">Import Successful!</div>
+            <div style="color:var(--gray-600);margin-bottom:1rem;">Successfully imported ${result.importedCount || 0} questions</div>
+            <button class="btn btn-primary" onclick="location.reload()">Done</button>
+          </div>
+        `;
+        
+        showSuccessMessage(`Successfully imported ${result.importedCount || 0} questions!`);
+        await renderQuestions();
+        await loadOverview();
+      } else {
+        throw new Error(result.message || 'Import failed');
+      }
+    } catch (error) {
+      console.error('Error importing questions:', error);
+      importDiv.innerHTML = originalContent;
+      showErrorMessage('Failed to import questions: ' + error.message);
+    }
+    
+    // Reset file input
+    event.target.value = '';
+  }
+</script>
+</body>
+</html>

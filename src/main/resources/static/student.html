@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — ExamPortal</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    [data-theme="dark"] {
+      --white: #1a1a2e;
+      --gray-100: #16213e;
+      --gray-200: #0f3460;
+      --gray-800: #e2e8f0;
+      --gray-600: #94a3b8;
+      --gray-400: #64748b;
+      --purple-ghost: #1e1b4b;
+      --purple-pale: #2d1b69;
+    }
+    [data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+    [data-theme="dark"] .sidebar { background: linear-gradient(180deg,#0f0a2e 0%,#1e1b4b 100%); }
+    [data-theme="dark"] .main-content { background: #0f172a; }
+    [data-theme="dark"] .topbar { background: #1a1a2e; border-color: #1e293b; }
+    [data-theme="dark"] .stat-card,
+    [data-theme="dark"] .card,
+    [data-theme="dark"] .exam-card,
+    [data-theme="dark"] .q-navigator,
+    [data-theme="dark"] .q-progress-card { background: #1a1a2e; border-color: #1e293b; }
+    [data-theme="dark"] .table th { background: #0f172a; color: #64748b; }
+    [data-theme="dark"] .table td { border-color: #1e293b; color: #e2e8f0; }
+    [data-theme="dark"] .table tr:hover td { background: #1e293b; }
+    [data-theme="dark"] .option { background: #1a1a2e; border-color: #1e293b; color: #e2e8f0; }
+    [data-theme="dark"] .option:hover { background: #1e1b4b; }
+    [data-theme="dark"] .form-input,
+    [data-theme="dark"] .form-select { background: #1a1a2e; border-color: #1e293b; color: #e2e8f0; }
+    [data-theme="dark"] .topbar-title { color: #e2e8f0; }
+    [data-theme="dark"] .stat-value { color: #e2e8f0; }
+    [data-theme="dark"] .card-title { color: #e2e8f0; }
+    [data-theme="dark"] .exam-card-title { color: #e2e8f0; }
+    [data-theme="dark"] .feature-title { color: #e2e8f0; }
+    [data-theme="dark"] .modal { background: #1a1a2e; }
+    [data-theme="dark"] .modal-title { color: #e2e8f0; }
+
+    .theme-toggle {
+      width: 42px; height: 24px; border-radius: 12px;
+      background: rgba(255,255,255,0.2); border: none; cursor: pointer;
+      position: relative; transition: background 0.3s;
+    }
+    .theme-toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: white; transition: transform 0.3s;
+    }
+    [data-theme="dark"] .theme-toggle { background: var(--purple-light); }
+    [data-theme="dark"] .theme-toggle::after { transform: translateX(18px); }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--purple-deep), var(--purple-mid));
+      border-radius: var(--radius-lg); padding: 2rem;
+      color: white; margin-bottom: 1.5rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; overflow: hidden;
+    }
+    .welcome-banner::before {
+      content: ''; position: absolute;
+      right: -40px; top: -40px; width: 200px; height: 200px;
+      background: rgba(255,255,255,0.05); border-radius: 50%;
+    }
+    .welcome-banner::after {
+      content: ''; position: absolute;
+      right: 40px; bottom: -60px; width: 150px; height: 150px;
+      background: rgba(255,255,255,0.05); border-radius: 50%;
+    }
+    .welcome-text h2 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .welcome-text p { color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+    .welcome-emoji { font-size: 4rem; position: relative; z-index: 1; }
+
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .section-head-title { font-weight: 600; font-size: 1rem; color: var(--gray-800); }
+
+    .result-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F3F4F6; }
+    [data-theme="dark"] .result-row { border-color: #1e293b; }
+    .result-row:last-child { border-bottom: none; }
+    .result-row-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--purple-pale); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .result-row-info { flex: 1; }
+    .result-row-name { font-weight: 500; font-size: 0.9rem; color: var(--gray-800); }
+    .result-row-date { font-size: 0.8rem; color: var(--gray-400); }
+    .result-row-score { text-align: right; }
+    .result-row-pct { font-weight: 700; font-size: 1rem; color: var(--purple-main); }
+    .result-row-grade { font-size: 0.78rem; color: var(--gray-400); }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; }
+    .empty-state-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state-title { font-weight: 600; color: var(--gray-800); margin-bottom: 0.4rem; }
+    .empty-state-desc { font-size: 0.9rem; color: var(--gray-400); }
+
+    /* VIEWS */
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn 0.3s ease; }
+  </style>
+</head>
+<body>
+<div class="dashboard-layout" id="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">📝</div>
+      ExamPortal
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Menu</div>
+      <button class="sidebar-item active" onclick="showView('dashboard', this)">
+        <span class="icon">🏠</span> Dashboard
+      </button>
+      <button class="sidebar-item" onclick="showView('exams', this)">
+        <span class="icon">📋</span> Available Exams
+      </button>
+      <button class="sidebar-item" onclick="showView('questionbank', this)">
+        <span class="icon">📚</span> Question Bank
+      </button>
+      <button class="sidebar-item" onclick="showView('results', this)">
+        <span class="icon">📊</span> My Results
+      </button>
+      <button class="sidebar-item" onclick="showView('profile', this)">
+        <span class="icon">👤</span> My Profile
+      </button>
+    </div>
+    <div class="sidebar-bottom">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin-bottom:8px;">
+        <span style="color:rgba(255,255,255,0.6);font-size:0.85rem;">Dark Mode</span>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()"></button>
+      </div>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar">PS</div>
+        <div>
+          <div class="sidebar-user-name" id="sidebar-name">Priya Sharma</div>
+          <div class="sidebar-user-role">Student</div>
+        </div>
+      </div>
+      <button class="sidebar-item" onclick="logout()" style="margin-top:8px;">
+        <span class="icon">🚪</span> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub">Welcome back!</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span id="topbar-date" style="font-size:0.85rem;color:var(--gray-400);"></span>
+        <a href="index.html" class="btn btn-outline" style="padding:6px 16px;font-size:0.85rem;">Home</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- DASHBOARD VIEW -->
+      <div class="view active" id="view-dashboard">
+        <div class="welcome-banner">
+          <div class="welcome-text">
+            <h2 id="welcome-name">Good morning, Priya!</h2>
+            <p>You have <strong id="available-count">3</strong> exams available. Ready to test yourself?</p>
+          </div>
+          <div class="welcome-emoji">🎓</div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card purple">
+            <div class="stat-icon purple">📋</div>
+            <div class="stat-value" id="stat-available">0</div>
+            <div class="stat-label">Exams Available</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-value" id="stat-attempted">0</div>
+            <div class="stat-label">Exams Attempted</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-icon amber">⭐</div>
+            <div class="stat-value" id="stat-avg">—</div>
+            <div class="stat-label">Average Score</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon red">🏆</div>
+            <div class="stat-value" id="stat-best">—</div>
+            <div class="stat-label">Best Score</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Recent Results</span>
+              <button class="btn btn-outline" style="padding:5px 14px;font-size:0.82rem;" onclick="showView('results',null)">View All</button>
+            </div>
+            <div class="card-body" id="recent-results-list">
+              <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-title">No results yet</div>
+                <div class="empty-state-desc">Attempt an exam to see your results here.</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">Quick Start</span>
+            </div>
+            <div class="card-body" id="quick-exams-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXAMS VIEW -->
+      <div class="view" id="view-exams">
+        <div class="section-head">
+          <span class="section-head-title">Available Exams</span>
+          <span id="exam-count-label" style="font-size:0.85rem;color:var(--gray-400);"></span>
+        </div>
+        <div class="exam-grid" id="exams-grid"></div>
+      </div>
+
+      <!-- QUESTION BANK VIEW -->
+      <div class="view" id="view-questionbank">
+        <div class="section-head">
+          <span class="section-head-title">Question Bank & Study Materials</span>
+          <span style="font-size:0.85rem;color:var(--gray-400);">Practice and prepare for your exams</span>
+        </div>
+
+        <!-- Study Materials Section -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="card-header">
+            <span class="card-title">📚 Study Materials</span>
+          </div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(250px, 1fr));gap:1rem;">
+              <div style="border:1px solid var(--purple-mid);border-radius:8px;padding:1rem;background:var(--purple-pale);text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">📄</div>
+                <div style="font-weight:500;margin-bottom:0.25rem;">Science Notes</div>
+                <div style="font-size:0.78rem;color:var(--gray-400);">PDF • 2.5 MB</div>
+                <button class="btn btn-primary btn-full" style="margin-top:0.5rem;font-size:0.85rem;">Download</button>
+              </div>
+              <div style="border:1px solid var(--purple-mid);border-radius:8px;padding:1rem;background:var(--purple-pale);text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">📐</div>
+                <div style="font-weight:500;margin-bottom:0.25rem;">Math Formulas</div>
+                <div style="font-size:0.78rem;color:var(--gray-400);">PDF • 1.8 MB</div>
+                <button class="btn btn-primary btn-full" style="margin-top:0.5rem;font-size:0.85rem;">Download</button>
+              </div>
+              <div style="border:1px solid var(--purple-mid);border-radius:8px;padding:1rem;background:var(--purple-pale);text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">🌍</div>
+                <div style="font-weight:500;margin-bottom:0.25rem;">Geography Maps</div>
+                <div style="font-size:0.78rem;color:var(--gray-400);">PDF • 3.2 MB</div>
+                <button class="btn btn-primary btn-full" style="margin-top:0.5rem;font-size:0.85rem;">Download</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Practice Questions Section -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🎯 Practice Questions</span>
+            <select id="qb-filter-subject" class="form-select" style="width:150px;" onchange="loadQuestionBank()">
+              <option value="">All Subjects</option>
+              <option>Science</option><option>Math</option><option>History</option>
+              <option>Geography</option><option>English</option><option>Computer</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <div id="questionbank-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTS VIEW -->
+      <div class="view" id="view-results">
+        <div class="section-head">
+          <span class="section-head-title">My Results</span>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:0;">
+            <table class="table" id="results-table">
+              <thead>
+                <tr>
+                  <th>Exam</th>
+                  <th>Score</th>
+                  <th>Percentage</th>
+                  <th>Grade</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE VIEW -->
+      <div class="view" id="view-profile">
+        <div style="max-width:520px;">
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-body" style="text-align:center;padding:2.5rem;">
+              <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--purple-mid),var(--purple-light));display:flex;align-items:center;justify-content:center;font-size:2rem;color:white;font-weight:700;margin:0 auto 1rem;" id="profile-avatar-big">PS</div>
+              <div style="font-size:1.2rem;font-weight:600;color:var(--gray-800);margin-bottom:4px;" id="profile-name">Priya Sharma</div>
+              <div class="badge badge-purple" style="margin-bottom:1.5rem;">Student</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;">
+                <div style="background:var(--gray-100);border-radius:var(--radius-sm);padding:12px;">
+                  <div style="font-size:0.78rem;color:var(--gray-400);margin-bottom:4px;">Email</div>
+                  <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800);" id="profile-email">priya@exam.com</div>
+                </div>
+                <div style="background:var(--gray-100);border-radius:var(--radius-sm);padding:12px;">
+                  <div style="font-size:0.78rem;color:var(--gray-400);margin-bottom:4px;">Role</div>
+                  <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800);">Student</div>
+                </div>
+                <div style="background:var(--gray-100);border-radius:var(--radius-sm);padding:12px;">
+                  <div style="font-size:0.78rem;color:var(--gray-400);margin-bottom:4px;">Exams Attempted</div>
+                  <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800);" id="profile-attempted">0</div>
+                </div>
+                <div style="background:var(--gray-100);border-radius:var(--radius-sm);padding:12px;">
+                  <div style="font-size:0.78rem;color:var(--gray-400);margin-bottom:4px;">Best Score</div>
+                  <div style="font-size:0.9rem;font-weight:500;color:var(--purple-main);" id="profile-best">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-danger-outline btn-full" onclick="logout()">Sign Out</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="exam-modal">
+  <div class="modal">
+    <div class="modal-icon">📋</div>
+    <div class="modal-title" id="modal-exam-title">Start Exam?</div>
+    <div class="modal-text" id="modal-exam-details">This exam has 10 questions and 10 minutes.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-full" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary btn-full" onclick="startExam()">Start Exam</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DATA ──
+  async function fetchExams() {
+    try {
+      const response = await fetch('/api/exams');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      return [];
+    }
+  }
+
+  async function fetchMyResults() {
+    try {
+      const session = getSession();
+      const response = await fetch(`/api/results/${session.id}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching results:', error);
+      return [];
+    }
+  }
+
+  function getSession() { return JSON.parse(localStorage.getItem('ep_session') || 'null'); }
+
+  // ── AUTH CHECK ──
+  const session = getSession();
+  if (!session || session.role !== 'STUDENT') { window.location.href = 'login.html'; }
+
+  // ── INIT ──
+  document.addEventListener('DOMContentLoaded', () => {
+    // Set user info
+    const initials = session.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('sidebar-avatar').textContent = initials;
+    document.getElementById('sidebar-name').textContent   = session.name;
+    document.getElementById('profile-avatar-big').textContent = initials;
+    document.getElementById('profile-name').textContent   = session.name;
+    document.getElementById('profile-email').textContent  = session.email;
+
+    // Greeting
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('welcome-name').textContent = greet + ', ' + session.name.split(' ')[0] + '!';
+
+    // Date
+    document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+
+    // Theme
+    if (localStorage.getItem('ep_theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+
+    loadDashboard();
+    loadExams();
+    loadResults();
+  });
+
+  async function loadDashboard() {
+    try {
+      const [exams, results] = await Promise.all([
+        fetchExams(),
+        fetchMyResults()
+      ]);
+
+      document.getElementById('stat-available').textContent  = exams.length;
+      document.getElementById('stat-attempted').textContent  = results.length;
+      document.getElementById('available-count').textContent = exams.length;
+      document.getElementById('profile-attempted').textContent = results.length;
+
+      if (results.length) {
+        const avg  = Math.round(results.reduce((s, r) => s + r.percentage, 0) / results.length);
+        const best = Math.round(Math.max(...results.map(r => r.percentage)));
+        document.getElementById('stat-avg').textContent    = avg + '%';
+        document.getElementById('stat-best').textContent   = best + '%';
+        document.getElementById('profile-best').textContent = best + '%';
+      }
+
+      // Recent results
+      const recentEl = document.getElementById('recent-results-list');
+      if (results.length) {
+        recentEl.innerHTML = results.slice(-3).reverse().map(r => `
+          <div class="result-row">
+            <div class="result-row-icon">📋</div>
+            <div class="result-row-info">
+              <div class="result-row-name">${r.examTitle}</div>
+              <div class="result-row-date">${r.date ? new Date(r.date).toLocaleDateString() : 'N/A'}</div>
+            </div>
+            <div class="result-row-score">
+              <div class="result-row-pct">${Math.round(r.percentage)}%</div>
+              <div class="result-row-grade">${r.grade || 'N/A'}</div>
+            </div>
+          </div>`).join('');
+      }
+
+      // Quick start exams
+      const quickEl = document.getElementById('quick-exams-list');
+      quickEl.innerHTML = exams.slice(0,3).map(e => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F3F4F6;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.2rem;">📋</span>
+            <div>
+              <div style="font-size:0.9rem;font-weight:500;color:var(--gray-800);">${e.title}</div>
+              <div style="font-size:0.78rem;color:var(--gray-400);">${e.questionCount || 0} questions · ${e.duration} min</div>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="padding:5px 14px;font-size:0.82rem;" onclick="openModal(${e.id})">Start</button>
+        </div>`).join('');
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    }
+  }
+
+  async function loadExams() {
+    try {
+      const exams = await fetchExams();
+      document.getElementById('exam-count-label').textContent = exams.length + ' exams available';
+      document.getElementById('exams-grid').innerHTML = exams.map(e => `
+        <div class="exam-card" onclick="openModal(${e.id})">
+          <div class="exam-card-top">
+            <div class="exam-card-icon">📋</div>
+            <span class="badge badge-purple">${e.subject || 'Mixed'}</span>
+          </div>
+          <div class="exam-card-title">${e.title}</div>
+          <div class="exam-card-subject">Created by Admin</div>
+          <div class="exam-card-meta">
+            <span>❓ ${e.questionCount || 0} questions</span>
+            <span>⏱️ ${e.duration} min</span>
+          </div>
+          <button class="btn btn-primary btn-full">Start Exam</button>
+        </div>`).join('');
+    } catch (error) {
+      console.error('Error loading exams:', error);
+    }
+  }
+
+  async function loadResults() {
+    try {
+      const results = await fetchMyResults();
+      const tbody = document.getElementById('results-tbody');
+      if (!results.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--gray-400);">No results yet. Attempt an exam first!</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = results.map(r => `
+        <tr>
+          <td style="font-weight:500;">${r.examTitle}</td>
+          <td>${r.score}/${r.total}</td>
+          <td><span class="badge ${r.percentage>=80?'badge-green':r.percentage>=60?'badge-purple':r.percentage>=40?'badge-amber':'badge-red'}">${Math.round(r.percentage)}%</span></td>
+          <td>${r.grade || 'N/A'}</td>
+          <td style="color:var(--gray-400);font-size:0.85rem;">${r.date ? new Date(r.date).toLocaleDateString() : 'N/A'}</td>
+          <td><button class="btn btn-outline" style="padding:4px 12px;font-size:0.8rem;" onclick="viewResult('${r.id}')">Review</button></td>
+        </tr>`).join('');
+    } catch (error) {
+      console.error('Error loading results:', error);
+    }
+  }
+
+  // ── MODAL ──
+  let selectedExamId = null;
+  async function openModal(id) {
+    selectedExamId = id;
+    try {
+      const exams = await fetchExams();
+      const exam = exams.find(e => e.id === id);
+      if (exam) {
+        document.getElementById('modal-exam-title').textContent   = exam.title;
+        document.getElementById('modal-exam-details').textContent = `${exam.questionCount || 0} questions · ${exam.duration} minutes · Subject: ${exam.subject || 'Mixed'}`;
+        document.getElementById('exam-modal').classList.add('active');
+      }
+    } catch (error) {
+      console.error('Error opening modal:', error);
+    }
+  }
+  function closeModal() { document.getElementById('exam-modal').classList.remove('active'); }
+  function startExam() {
+    localStorage.setItem('ep_current_exam', selectedExamId);
+    closeModal();
+    window.location.href = 'exam.html';
+  }
+
+  function viewResult(id) {
+    localStorage.setItem('ep_view_result', id);
+    window.location.href = 'result.html';
+  }
+
+  // ── QUESTION BANK ──
+  async function loadQuestionBank() {
+    try {
+      const response = await fetch('/api/questions');
+      const questions = await response.json();
+      const filter = document.getElementById('qb-filter-subject').value;
+      const list = filter ? questions.filter(q => q.subject === filter) : questions;
+      
+      document.getElementById('questionbank-list').innerHTML = list.map(q => `
+        <div style="background:var(--gray-100);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.5rem;">
+            <span class="badge badge-purple">${q.subject}</span>
+            <span style="font-size:0.78rem;color:var(--gray-400);">Question ID: ${q.id}</span>
+          </div>
+          <div style="font-weight:500;margin-bottom:0.75rem;">${q.questionText}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <div style="padding:0.5rem;background:white;border-radius:4px;border:1px solid #E5E7EB;">
+              <span style="font-weight:600;color:var(--purple-main);">A.</span> ${q.optionA}
+            </div>
+            <div style="padding:0.5rem;background:white;border-radius:4px;border:1px solid #E5E7EB;">
+              <span style="font-weight:600;color:var(--purple-main);">B.</span> ${q.optionB}
+            </div>
+            <div style="padding:0.5rem;background:white;border-radius:4px;border:1px solid #E5E7EB;">
+              <span style="font-weight:600;color:var(--purple-main);">C.</span> ${q.optionC}
+            </div>
+            <div style="padding:0.5rem;background:white;border-radius:4px;border:1px solid #E5E7EB;">
+              <span style="font-weight:600;color:var(--purple-main);">D.</span> ${q.optionD}
+            </div>
+          </div>
+          <div style="margin-top:0.75rem;padding:0.5rem;background:#D1FAE5;border-radius:4px;border:1px solid #A7F3D0;">
+            <span style="font-weight:600;color:#065F46;">✓ Correct Answer: ${q.correctOption}</span>
+          </div>
+        </div>`).join('');
+    } catch (error) {
+      console.error('Error loading question bank:', error);
+      document.getElementById('questionbank-list').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray-400);">Error loading questions. Please try again.</div>';
+    }
+  }
+
+  // ── NAVIGATION ──
+  function showView(name, btn) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    if (btn) btn.classList.add('active');
+    const titles = { dashboard:'Dashboard', exams:'Available Exams', questionbank:'Question Bank', results:'My Results', profile:'My Profile' };
+    document.getElementById('topbar-title').textContent = titles[name] || name;
+    
+    // Load question bank when switching to question bank view
+    if (name === 'questionbank') {
+      loadQuestionBank();
+    }
+  }
+
+  // ── THEME ──
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+    localStorage.setItem('ep_theme', isDark ? 'light' : 'dark');
+  }
+
+  function logout() {
+    localStorage.removeItem('ep_session');
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>

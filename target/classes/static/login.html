@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — ExamPortal</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="auth-page">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-content">
+      <a href="index.html" style="font-family:var(--font-display);font-size:1.5rem;color:white;font-weight:700;text-decoration:none;display:block;margin-bottom:2rem;">📝 ExamPortal</a>
+      <h2>Welcome back to your exam hub</h2>
+      <p>Sign in to access your exams, track your results, and continue your learning journey.</p>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <div class="auth-feature-icon">⏱️</div>
+          Timed exams with auto-submit
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">⚡</div>
+          Instant results and grade calculation
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">📊</div>
+          Full answer review after each exam
+        </div>
+        <div class="auth-feature">
+          <div class="auth-feature-icon">🔒</div>
+          Secure role-based access
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <span class="logo">ExamPortal</span>
+      <h1>Sign in to your account</h1>
+      <p class="subtitle">Don't have an account? <a href="register.html">Create one free</a></p>
+
+      <div id="error-msg" class="alert alert-error hidden"></div>
+
+      <div class="form-group">
+        <label class="form-label">Email address</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;">
+          Password <a href="#" style="color:var(--purple-main);font-weight:500;font-size:0.85rem;">Forgot password?</a>
+        </label>
+        <input type="password" id="password" class="form-input" placeholder="Enter your password">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sign in as</label>
+        <select id="role" class="form-select">
+          <option value="STUDENT">Student</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary btn-full btn-lg" onclick="handleLogin()">Sign In</button>
+
+      <div class="divider">or continue with</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="btn btn-outline" onclick="demoLogin('student')">Demo Student</button>
+        <button class="btn btn-outline" onclick="demoLogin('admin')">Demo Admin</button>
+      </div>
+
+      <div class="auth-link">
+        New here? <a href="register.html">Create a free account</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function handleLogin() {
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const role     = document.getElementById('role').value;
+
+    if (!email || !password) {
+      showError('Please fill in all fields.'); return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Verify role matches
+        if (data.role !== role) {
+          showError(`Invalid role. You are registered as ${data.role}.`); return;
+        }
+
+        // Save session
+        localStorage.setItem('ep_session', JSON.stringify(data));
+
+        // Redirect
+        if (data.role === 'ADMIN') {
+          window.location.href = 'admin.html';
+        } else {
+          window.location.href = 'student.html';
+        }
+      } else {
+        showError(data.message || 'Login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      showError('Network error. Please check your connection and try again.');
+    }
+  }
+
+  function demoLogin(type) {
+    if (type === 'student') {
+      document.getElementById('email').value    = 'priya@exam.com';
+      document.getElementById('password').value = 'priya123';
+      document.getElementById('role').value     = 'STUDENT';
+    } else {
+      document.getElementById('email').value    = 'admin@exam.com';
+      document.getElementById('password').value = 'admin123';
+      document.getElementById('role').value     = 'ADMIN';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+
+  // If already logged in redirect
+  const session = localStorage.getItem('ep_session');
+  if (session) {
+    const u = JSON.parse(session);
+    window.location.href = u.role === 'ADMIN' ? 'admin.html' : 'student.html';
+  }
+</script>
+</body>
+</html>
